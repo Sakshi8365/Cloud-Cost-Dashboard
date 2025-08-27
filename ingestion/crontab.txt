@@ -1,0 +1,2 @@
+# Run anomaly detection every hour
+0 * * * * root python /app/anomaly_alert.py >> /app/anomaly_alert.log 2>&1

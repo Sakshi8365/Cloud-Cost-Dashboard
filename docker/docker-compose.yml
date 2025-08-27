@@ -1,0 +1,43 @@
+version: '3.8'
+services:
+  db:
+    image: timescale/timescaledb:latest-pg14
+    container_name: timescaledb
+    environment:
+      POSTGRES_USER: clouduser
+      POSTGRES_PASSWORD: cloudpass
+      POSTGRES_DB: cloudcost
+    ports:
+      - "5433:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  backend:
+    build: ../backend
+    container_name: backend
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - ../backend:/app
+    environment:
+      DATABASE_URL: postgresql://clouduser:cloudpass@db:5432/cloudcost
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    restart: unless-stopped
+
+  ingestion:
+    build: ../ingestion
+    container_name: ingestion
+    command: python ingest.py
+    volumes:
+      - ../ingestion:/app
+    environment:
+      DATABASE_URL: postgresql://clouduser:cloudpass@db:5432/cloudcost
+    depends_on:
+      - db
+    restart: unless-stopped
+
+volumes:
+  db_data:
